@@ -1,6 +1,6 @@
 package com.medverify.dto;
 
-import com.medverify.entity.UserRole;
+import java.time.LocalDateTime;
 
 public class LoginResponse {
     private String accessToken;
@@ -9,16 +9,20 @@ public class LoginResponse {
     private String username;
     private String email;
     private Long hospitalId;
+    private boolean mustChangePassword;
+    private LocalDateTime lastLoginAt;
 
     public LoginResponse() {}
 
-    public LoginResponse(String accessToken, String refreshToken, String role, String username, String email, Long hospitalId) {
+    public LoginResponse(String accessToken, String refreshToken, String role, String username, String email, Long hospitalId, boolean mustChangePassword, LocalDateTime lastLoginAt) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.role = role;
         this.username = username;
         this.email = email;
         this.hospitalId = hospitalId;
+        this.mustChangePassword = mustChangePassword;
+        this.lastLoginAt = lastLoginAt;
     }
 
     public String getAccessToken() { return accessToken; }
@@ -38,4 +42,11 @@ public class LoginResponse {
 
     public Long getHospitalId() { return hospitalId; }
     public void setHospitalId(Long hospitalId) { this.hospitalId = hospitalId; }
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
+
+    public LocalDateTime getLastLoginAt() { return lastLoginAt; }
+    public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
 }
+

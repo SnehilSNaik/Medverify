@@ -1,7 +1,9 @@
 package com.medverify.controller;
 
 import com.medverify.dto.*;
+import com.medverify.entity.AuditLog;
 import com.medverify.service.AdminService;
+import com.medverify.service.AuditService;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * AdminController handles all administrative REST endpoints.
@@ -21,9 +24,11 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AuditService auditService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, AuditService auditService) {
         this.adminService = adminService;
+        this.auditService = auditService;
     }
 
     // ─── DASHBOARD ────────────────────────────────────────────────────────────
@@ -103,5 +108,28 @@ public class AdminController {
     @GetMapping("/certificates/revoked")
     public ResponseEntity<ApiResponse<List<CertificateResponse>>> getRevokedCertificates() {
         return ResponseEntity.ok(ApiResponse.success("Revoked certificates retrieved", adminService.getRevokedCertificates()));
+    }
+
+    // ─── AUDIT TRAIL ──────────────────────────────────────────────────────────
+
+    @GetMapping("/audit-logs")
+    public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getAuditLogs() {
+        List<AuditLogResponse> logs = auditService.getRecentLogs().stream()
+                .map(this::toAuditLogResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Audit logs retrieved", logs));
+    }
+
+    private AuditLogResponse toAuditLogResponse(AuditLog log) {
+        AuditLogResponse r = new AuditLogResponse();
+        r.setId(log.getId());
+        r.setAction(log.getAction());
+        r.setUsername(log.getUsername());
+        r.setRole(log.getRole());
+        r.setDetails(log.getDetails());
+        r.setIpAddress(log.getIpAddress());
+        r.setSeverity(log.getSeverity());
+        r.setTimestamp(log.getTimestamp());
+        return r;
     }
 }

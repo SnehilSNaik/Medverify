@@ -33,16 +33,20 @@ public class HospitalService {
     private final CryptoService cryptoService;
     private final QRCodeService qrCodeService;
     private final PDFService pdfService;
+    private final AuditService auditService;
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HospitalService.class);
 
-    public HospitalService(HospitalRepository hospitalRepository, DoctorRepository doctorRepository, MedicalCertificateRepository certificateRepository, CryptoService cryptoService, QRCodeService qrCodeService, PDFService pdfService) {
+    public HospitalService(HospitalRepository hospitalRepository, DoctorRepository doctorRepository,
+                           MedicalCertificateRepository certificateRepository, CryptoService cryptoService,
+                           QRCodeService qrCodeService, PDFService pdfService, AuditService auditService) {
         this.hospitalRepository = hospitalRepository;
         this.doctorRepository = doctorRepository;
         this.certificateRepository = certificateRepository;
         this.cryptoService = cryptoService;
         this.qrCodeService = qrCodeService;
         this.pdfService = pdfService;
+        this.auditService = auditService;
     }
 
     // ─── DOCTOR MANAGEMENT ────────────────────────────────────────────────────
@@ -166,6 +170,8 @@ public class HospitalService {
         cert.setQrCodeData(qrBase64);
 
         MedicalCertificate saved = certificateRepository.save(cert);
+        auditService.logInfo(AuditService.CERT_ISSUED, hospital.getName(), "HOSPITAL",
+                "Certificate issued for patient: " + saved.getPatientName() + " by Dr. " + doctor.getName(), "system");
         log.info("Certificate '{}' issued for patient '{}' by doctor '{}' at hospital '{}'",
                 saved.getCertificateId(), saved.getPatientName(),
                 doctor.getName(), hospital.getName());
@@ -187,6 +193,8 @@ public class HospitalService {
 
         cert.setStatus(CertificateStatus.REVOKED);
         MedicalCertificate revoked = certificateRepository.save(cert);
+        auditService.logWarning(AuditService.CERT_REVOKED, cert.getHospital().getName(), "HOSPITAL",
+                "Certificate REVOKED: " + certificateId + " (Patient: " + cert.getPatientName() + ")", "system");
         log.warn("Certificate '{}' revoked by hospital '{}'", certificateId, hospitalId);
         return toCertificateResponse(revoked);
     }

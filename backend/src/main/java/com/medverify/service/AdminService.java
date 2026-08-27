@@ -30,10 +30,14 @@ public class AdminService {
     private final VerificationLogRepository verificationLogRepository;
     private final CryptoService cryptoService;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService auditService;
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AdminService.class);
 
-    public AdminService(HospitalRepository hospitalRepository, UserRepository userRepository, DoctorRepository doctorRepository, MedicalCertificateRepository certificateRepository, VerificationLogRepository verificationLogRepository, CryptoService cryptoService, PasswordEncoder passwordEncoder) {
+    public AdminService(HospitalRepository hospitalRepository, UserRepository userRepository,
+                        DoctorRepository doctorRepository, MedicalCertificateRepository certificateRepository,
+                        VerificationLogRepository verificationLogRepository, CryptoService cryptoService,
+                        PasswordEncoder passwordEncoder, AuditService auditService) {
         this.hospitalRepository = hospitalRepository;
         this.userRepository = userRepository;
         this.doctorRepository = doctorRepository;
@@ -41,6 +45,7 @@ public class AdminService {
         this.verificationLogRepository = verificationLogRepository;
         this.cryptoService = cryptoService;
         this.passwordEncoder = passwordEncoder;
+        this.auditService = auditService;
     }
 
     // ─── DASHBOARD ────────────────────────────────────────────────────────────
@@ -106,6 +111,8 @@ public class AdminService {
         generateAndSetKeys(hospital);
 
         Hospital saved = hospitalRepository.save(hospital);
+        auditService.logInfo(AuditService.HOSPITAL_CREATED, "admin", "ADMIN",
+                "Created hospital: " + saved.getName() + " (" + saved.getLicenseNumber() + ")", "system");
         log.info("Created hospital '{}' with ID {}", saved.getName(), saved.getId());
         return toHospitalResponse(saved);
     }
@@ -121,7 +128,10 @@ public class AdminService {
         hospital.setPhone(request.getPhone());
         hospital.setEmail(request.getEmail());
         hospital.setLicenseNumber(request.getLicenseNumber());
-        return toHospitalResponse(hospitalRepository.save(hospital));
+        Hospital saved = hospitalRepository.save(hospital);
+        auditService.logInfo(AuditService.HOSPITAL_UPDATED, "admin", "ADMIN",
+                "Updated hospital: " + saved.getName(), "system");
+        return toHospitalResponse(saved);
     }
 
     /**
@@ -131,8 +141,11 @@ public class AdminService {
     public HospitalResponse toggleHospitalActive(Long id) {
         Hospital hospital = findHospitalOrThrow(id);
         hospital.setActive(!hospital.isActive());
+        Hospital saved = hospitalRepository.save(hospital);
+        auditService.logInfo(AuditService.USER_TOGGLED, "admin", "ADMIN",
+                "Hospital " + saved.getName() + " status set to " + (saved.isActive() ? "ACTIVE" : "INACTIVE"), "system");
         log.info("Hospital '{}' active status toggled to {}", hospital.getName(), hospital.isActive());
-        return toHospitalResponse(hospitalRepository.save(hospital));
+        return toHospitalResponse(saved);
     }
 
     /**
@@ -143,8 +156,11 @@ public class AdminService {
     public HospitalResponse regenerateHospitalKeys(Long id) throws Exception {
         Hospital hospital = findHospitalOrThrow(id);
         generateAndSetKeys(hospital);
+        Hospital saved = hospitalRepository.save(hospital);
+        auditService.logCritical(AuditService.KEYS_REGENERATED, "admin", "ADMIN",
+                "RSA Keypair regenerated for hospital: " + saved.getName(), "system");
         log.warn("RSA keys regenerated for hospital '{}'. Existing certificates invalidated!", hospital.getName());
-        return toHospitalResponse(hospitalRepository.save(hospital));
+        return toHospitalResponse(saved);
     }
 
     // ─── USER MANAGEMENT ──────────────────────────────────────────────────────
@@ -170,6 +186,8 @@ public class AdminService {
         user.setRole(UserRole.VERIFIER);
         user.setActive(true);
         User saved = userRepository.save(user);
+        auditService.logInfo(AuditService.USER_CREATED, "admin", "ADMIN",
+                "Created verifier user: " + saved.getUsername(), "system");
         log.info("Created verifier user '{}'", saved.getUsername());
         return toUserResponse(saved);
     }
@@ -187,7 +205,10 @@ public class AdminService {
         user.setRole(UserRole.HOSPITAL);
         user.setHospital(hospital);
         user.setActive(true);
-        return toUserResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        auditService.logInfo(AuditService.USER_CREATED, "admin", "ADMIN",
+                "Created hospital user: " + saved.getUsername() + " for " + hospital.getName(), "system");
+        return toUserResponse(saved);
     }
 
     // ─── VERIFICATION LOGS ────────────────────────────────────────────────────

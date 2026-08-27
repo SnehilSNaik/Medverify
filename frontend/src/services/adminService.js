@@ -36,5 +36,9 @@ export const adminService = {
   getLogs: async () => {
     const response = await api.get('/admin/verification-logs');
     return response.data.data;
+  },
+  getAuditLogs: async () => {
+    const response = await api.get('/admin/audit-logs');
+    return response.data.data;
   }
 };

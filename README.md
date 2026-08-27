@@ -28,33 +28,39 @@
 
 ## ✨ Features
 
-### 🛡️ Security
-- **SHA-256 Hashing** – Certificate content hashed for integrity
+### 🛡️ Advanced Security Architecture
+- **SHA-256 Hashing** – Canonical certificate content hashed for tamper detection
 - **RSA Digital Signatures** – 2048-bit RSA per hospital; signs certificate hash
-- **QR Code Authentication** – QR embeds certificate ID + verification URL
-- **JWT Authentication** – Access (15 min) + Refresh (7 days) tokens
-- **BCrypt Password Encryption** – All passwords hashed
+- **Sliding-Window Rate Limiter** – Protects authentication endpoints from credential stuffing and brute-force attacks (HTTP 429 Retry-After)
+- **Account Lockout Protection** – Automatic 15-minute account lockout after 5 consecutive failed login attempts
+- **Comprehensive Audit Trail** – Real-time event logging with severity levels (INFO, WARNING, CRITICAL), actor tracking, IP forensics, and timestamps
+- **Password Lifecycle & Forced Rotation** – First-login forced password change policy + authenticated self-service password update
+- **QR Code Authentication** – High-density QR embedding certificate ID + verification payload
+- **JWT Authentication** – Stateless Access + Refresh token flow with claims validation
+- **BCrypt Password Encryption** – Salted password hashing with configurable workload factor
 - **AES-256 Encryption** – Hospital RSA private keys encrypted at rest
 
 ### 👨‍⚕️ Hospital Module
-- Secure login with role-based access
-- Manage doctors (add, edit, toggle active)
-- Issue medical certificates (auto-generates SHA-256 hash + RSA signature)
-- Download certificates as professional PDFs
+- Secure login with role-based access & session security
+- Manage doctors (add, edit, toggle active status)
+- Issue medical certificates (auto-generates SHA-256 hash + RSA-2048 digital signature)
+- Download certificates as professional PDFs with embedded QR codes
 - View QR codes for each certificate
-- Revoke certificates
+- Revoke certificates with immediate cryptographic revocation propagation
 
 ### 🔍 Verifier Module
-- Scan QR code via camera
+- Scan QR code via camera or upload certificate image
 - Manual certificate ID entry
 - Verification result: **GENUINE** 🟢 / **TAMPERED** 🔴 / **REVOKED** 🟡 / **NOT FOUND** ⚫
+- Public verification portal available without authentication
 
 ### 👑 Admin Module
-- Dashboard with statistics
-- Manage hospitals (create, edit, toggle, regenerate RSA keys)
-- Manage users (verifier accounts)
-- View all verification logs with fraud detection
-- View revoked certificates
+- Real-time Security & Platform Overview Dashboard
+- Live Security Audit Trail with severity filtering and telemetry
+- Manage hospitals (create, edit, toggle, regenerate RSA keypairs)
+- Manage users (verifier and hospital accounts)
+- View all verification logs with IP tracking and fraud telemetry
+- View and manage revoked certificates
 
 ---
 
@@ -195,15 +201,22 @@ npm run dev
 
 ---
 
-## 🔑 Default Credentials
+## 🔑 Initial Accounts & Password Policy
 
-| Role | Username | Password | Description |
-|---|---|---|---|
-| **Admin** | `admin` | `admin123` | Full system access |
-| **Hospital** | `hospital1` | `hospital123` | City General Hospital |
-| **Verifier** | `verifier1` | `verifier123` | College/Company verifier |
+MedVerify uses **Zero-Trust credentials** with mandatory rotation on first login:
 
-> ⚠️ **Change default passwords in production!**
+| Role | Username | Initial Password | Policy | Description |
+|---|---|---|---|---|
+| **Admin** | `admin` | `Admin@MedVerify2024!` | Change on 1st login | Full system administration |
+| **Hospital** | `hospital1` | `Hospital@Secure2024!` | Change on 1st login | City General Hospital portal |
+| **Verifier** | `verifier1` | `Verifier@Secure2024!` | Change on 1st login | College/Enterprise verifier |
+
+> 🔒 **Security Policy**:
+> - Hardcoded credentials have been removed from the frontend UI.
+> - Seeded accounts are assigned high-entropy initial passwords and flagged with `mustChangePassword=true`.
+> - Users are prompted to establish their own private password upon initial portal entry.
+> - Accounts automatically lock for 15 minutes after 5 consecutive failed authentication attempts.
+> - Authentication requests are rate-limited per IP address.
 
 ---
 
@@ -214,20 +227,22 @@ Swagger UI available at: `http://localhost:8080/swagger-ui.html`
 ### Auth Endpoints
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/auth/login` | None | Login and get JWT tokens |
-| GET | `/api/auth/me` | Any | Get current user info |
+| POST | `/api/auth/login` | None (Rate-limited) | Login, returns JWT access/refresh tokens |
+| POST | `/api/auth/change-password` | Authenticated | Change user account password |
+| GET | `/api/auth/me` | Authenticated | Get current authenticated user profile & last login |
 
 ### Admin Endpoints (ADMIN role)
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/admin/dashboard/stats` | Dashboard statistics |
-| GET/POST | `/api/admin/hospitals` | List / Create hospital |
-| PUT | `/api/admin/hospitals/{id}` | Update hospital |
-| POST | `/api/admin/hospitals/{id}/toggle-active` | Toggle hospital status |
-| POST | `/api/admin/hospitals/{id}/regenerate-keys` | Regenerate RSA keys |
+| GET | `/api/admin/dashboard/stats` | Dashboard statistics & fraud metrics |
+| GET | `/api/admin/audit-logs` | Retrieve live security audit trail |
+| GET/POST | `/api/admin/hospitals` | List / Create hospital with RSA keypair |
+| PUT | `/api/admin/hospitals/{id}` | Update hospital metadata |
+| POST | `/api/admin/hospitals/{id}/toggle-active` | Toggle hospital active status |
+| POST | `/api/admin/hospitals/{id}/regenerate-keys` | Regenerate hospital RSA keypair |
 | GET | `/api/admin/users` | List all users |
 | POST | `/api/admin/users/verifier` | Create verifier account |
-| GET | `/api/admin/verification-logs` | All verification logs |
+| GET | `/api/admin/verification-logs` | All verification logs with IP forensics |
 | GET | `/api/admin/certificates/revoked` | Revoked certificates |
 
 ### Hospital Endpoints (HOSPITAL role)

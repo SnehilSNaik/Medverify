@@ -16,13 +16,10 @@ import java.util.UUID;
  * DataInitializer seeds the database with default users and sample data on startup.
  * Only creates data if it doesn't already exist (idempotent).
  *
- * Default accounts created:
- *   Admin:    username=admin,    password=admin123
- *   Hospital: username=hospital1, password=hospital123
- *   Verifier: username=verifier1, password=verifier123
+ * NOTE: All seeded accounts have mustChangePassword=true, requiring users
+ * to set a new password on their first login.
  */
 @Component
-
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -50,11 +47,12 @@ public class DataInitializer implements CommandLineRunner {
             User admin = new User();
             admin.setUsername("admin");
             admin.setEmail("admin@medverify.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setPassword(passwordEncoder.encode("Admin@MedVerify2024!"));
             admin.setRole(UserRole.ADMIN);
             admin.setActive(true);
+            admin.setMustChangePassword(true);
             userRepository.save(admin);
-            log.info("✅ Admin user created: admin / admin123");
+            log.info("✅ Admin user created (must change password on first login)");
         }
 
         // ── 2. Create sample Hospital with RSA keys ──────────────────────────
@@ -83,12 +81,13 @@ public class DataInitializer implements CommandLineRunner {
             User hospitalUser = new User();
             hospitalUser.setUsername("hospital1");
             hospitalUser.setEmail("hospital1@medverify.com");
-            hospitalUser.setPassword(passwordEncoder.encode("hospital123"));
+            hospitalUser.setPassword(passwordEncoder.encode("Hospital@Secure2024!"));
             hospitalUser.setRole(UserRole.HOSPITAL);
             hospitalUser.setHospital(hospital);
             hospitalUser.setActive(true);
+            hospitalUser.setMustChangePassword(true);
             userRepository.save(hospitalUser);
-            log.info("✅ Hospital user created: hospital1 / hospital123");
+            log.info("✅ Hospital user created (must change password on first login)");
         }
 
         // ── 4. Create sample Doctor ──────────────────────────────────────────
@@ -112,11 +111,12 @@ public class DataInitializer implements CommandLineRunner {
             User verifier = new User();
             verifier.setUsername("verifier1");
             verifier.setEmail("verifier1@university.edu");
-            verifier.setPassword(passwordEncoder.encode("verifier123"));
+            verifier.setPassword(passwordEncoder.encode("Verifier@Secure2024!"));
             verifier.setRole(UserRole.VERIFIER);
             verifier.setActive(true);
+            verifier.setMustChangePassword(true);
             userRepository.save(verifier);
-            log.info("✅ Verifier user created: verifier1 / verifier123");
+            log.info("✅ Verifier user created (must change password on first login)");
         }
 
         // ── 6. Create a sample certificate (for demo purposes) ───────────────
@@ -161,12 +161,11 @@ public class DataInitializer implements CommandLineRunner {
 
         log.info("═══════════════════════════════════════════════════════════");
         log.info("  🏥 MedVerify – Started Successfully!");
-        log.info("  Default Credentials:");
-        log.info("    Admin:    admin / admin123");
-        log.info("    Hospital: hospital1 / hospital123");
-        log.info("    Verifier: verifier1 / verifier123");
-        log.info("  Swagger UI: http://localhost:8080/swagger-ui.html");
-        log.info("  Frontend:   http://localhost:5173");
+        log.info("  🔒 Security: Account lockout, audit trail, rate limiting ACTIVE");
+        log.info("  📋 Default users seeded (password change required on first login)");
+        log.info("  🌐 Backend API: http://localhost:8080");
+        log.info("  🖥️  Frontend:   http://localhost:3000");
         log.info("═══════════════════════════════════════════════════════════");
     }
 }
+
