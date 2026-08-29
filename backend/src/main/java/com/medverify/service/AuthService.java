@@ -157,8 +157,10 @@ public class AuthService {
             if (role == UserRole.ADMIN) {
                 throw new BadCredentialsException("Self-registration as Admin is not permitted.");
             }
+        } catch (BadCredentialsException bce) {
+            throw bce;
         } catch (Exception e) {
-            throw new BadCredentialsException("Invalid role specified. Choose VERIFIER or HOSPITAL.");
+            throw new BadCredentialsException("Invalid role specified. Choose HOSPITAL, STUDENT, or VERIFIER.");
         }
 
         User user = new User();

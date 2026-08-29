@@ -3,7 +3,7 @@ import { hospitalService } from '../../services/hospitalService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
-import { FileText, QrCode, Download, Ban, Search } from 'lucide-react';
+import { FileText, Download, QrCode, XCircle, Search, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDate } from '../../utils/constants';
 
@@ -13,8 +13,9 @@ const Certificates = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [qrBlobUrl, setQrBlobUrl] = useState(null);
   const [selectedCert, setSelectedCert] = useState(null);
+  const [qrBlobUrl, setQrBlobUrl] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   const fetchCertificates = async () => {
     try {
@@ -32,17 +33,33 @@ const Certificates = () => {
     return () => {
       if (qrBlobUrl) URL.revokeObjectURL(qrBlobUrl);
     };
-  }, []);
+  }, [qrBlobUrl]);
 
-  const handleRevoke = async (certId) => {
+  const handleRevoke = async (id) => {
     if (window.confirm('Are you sure you want to revoke this certificate? This action cannot be undone.')) {
       try {
-        await hospitalService.revokeCertificate(certId);
-        toast.success('Certificate revoked successfully');
+        await hospitalService.revokeCertificate(id);
+        toast.success('Certificate revoked');
         fetchCertificates();
       } catch (error) {
         toast.error('Failed to revoke certificate');
       }
+    }
+  };
+
+  const handleDownloadPDF = async (id, patientName) => {
+    try {
+      const blob = await hospitalService.downloadPDF(id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Certificate_${patientName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to download PDF');
     }
   };
 
@@ -58,90 +75,107 @@ const Certificates = () => {
     }
   };
 
-  const handleDownloadPDF = async (certId) => {
-    try {
-      const blob = await hospitalService.downloadPDF(certId);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Medical_Certificate_${certId.substring(0,8)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error('Failed to download PDF');
-    }
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    toast.success('Certificate UUID copied!');
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const filtered = certificates.filter(c => 
-    (c.certificateId && c.certificateId.toLowerCase().includes(searchTerm.toLowerCase())) || 
     (c.patientName && c.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (c.doctorName && c.doctorName.toLowerCase().includes(searchTerm.toLowerCase()))
+    (c.certificateId && c.certificateId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.disease && c.disease.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><FileText className="text-[#00d4ff]"/> Issued Certificates</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage and track all issued medical certificates</p>
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2.5">
+            <FileText className="text-rose-500"/> Issued Certificates Repository
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium">View, download, manage QR codes and revoke hospital certificates</p>
         </div>
       </div>
 
-      <div className="glass-panel p-4 mb-6 flex items-center gap-2">
-        <Search size={18} className="text-gray-400" />
+      <div className="bg-white border border-rose-100 p-4 rounded-2xl flex items-center gap-3 shadow-xs">
+        <Search size={18} className="text-slate-400" />
         <input 
           type="text" 
-          placeholder="Search by ID, Patient, or Doctor Name..." 
-          className="bg-transparent border-none outline-none text-white w-full text-sm"
+          placeholder="Search by Patient Name, Diagnosis, or Certificate UUID..." 
+          className="bg-transparent border-none outline-none text-slate-800 w-full text-sm font-medium placeholder:text-slate-400"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       {loading ? <LoadingSpinner /> : (
-        <div className="table-container">
+        <div className="table-container shadow-xs">
           <table className="data-table">
             <thead>
               <tr>
                 <th>Certificate ID</th>
                 <th>Patient Details</th>
+                <th>Diagnosis</th>
                 <th>Doctor</th>
-                <th>Dates</th>
+                <th>Issue Date</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(cert => (
-                <tr key={cert.id || cert.certificateId}>
-                  <td className="font-mono text-xs text-[#00d4ff]">{cert.certificateId ? `${cert.certificateId.substring(0,12)}...` : 'N/A'}</td>
-                  <td>
-                    <div className="font-medium text-white">{cert.patientName}</div>
-                    <div className="text-xs text-gray-500">{cert.age} yrs • {cert.gender}</div>
+                <tr key={cert.id}>
+                  <td className="font-mono text-xs font-bold text-rose-600">
+                    <div className="flex items-center gap-1.5">
+                      <span>{cert.certificateId.substring(0, 10)}...</span>
+                      <button 
+                        onClick={() => copyToClipboard(cert.certificateId)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                        title="Copy UUID"
+                      >
+                        {copiedId === cert.certificateId ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                      </button>
+                    </div>
                   </td>
-                  <td className="text-sm text-gray-300">{cert.doctorName}</td>
-                  <td className="text-xs text-gray-400 whitespace-nowrap">
-                    <div><span className="text-gray-500">Iss:</span> {formatDate(cert.issueDate)}</div>
-                    <div><span className="text-gray-500">Exp:</span> {formatDate(cert.expiryDate)}</div>
-                  </td>
                   <td>
-                    <Badge variant={cert.status === 'ACTIVE' ? 'success' : 'warning'}>
+                    <div className="font-bold text-slate-800">{cert.patientName}</div>
+                    <div className="text-xs text-slate-500 font-medium">{cert.age} yrs, {cert.gender}</div>
+                  </td>
+                  <td className="text-xs text-slate-600 max-w-[200px] truncate font-medium" title={cert.disease}>
+                    {cert.disease}
+                  </td>
+                  <td className="text-xs text-slate-700 font-semibold">{cert.doctorName}</td>
+                  <td className="text-xs text-slate-500 whitespace-nowrap font-medium">{formatDate(cert.issueDate)}</td>
+                  <td>
+                    <Badge variant={cert.status === 'ACTIVE' ? 'success' : 'danger'}>
                       {cert.status}
                     </Badge>
                   </td>
                   <td>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => handleViewQR(cert)} className="btn btn-ghost p-2 text-[#00d4ff]" title="View QR">
-                        <QrCode size={18} />
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => handleViewQR(cert)}
+                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="View QR Code"
+                      >
+                        <QrCode size={17} />
                       </button>
-                      <button onClick={() => handleDownloadPDF(cert.certificateId)} className="btn btn-ghost p-2 text-white" title="Download PDF">
-                        <Download size={18} />
+                      <button 
+                        onClick={() => handleDownloadPDF(cert.certificateId, cert.patientName)}
+                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Download PDF"
+                      >
+                        <Download size={17} />
                       </button>
                       {cert.status === 'ACTIVE' && (
-                        <button onClick={() => handleRevoke(cert.certificateId)} className="btn btn-ghost p-2 text-[#ef4444] hover:text-[#dc2626]" title="Revoke Certificate">
-                          <Ban size={18} />
+                        <button 
+                          onClick={() => handleRevoke(cert.certificateId)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Revoke Certificate"
+                        >
+                          <XCircle size={17} />
                         </button>
                       )}
                     </div>
@@ -150,7 +184,7 @@ const Certificates = () => {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="text-center text-gray-500 py-8">No certificates found</td>
+                  <td colSpan="7" className="text-center text-slate-400 py-10 font-medium">No certificates found matching criteria</td>
                 </tr>
               )}
             </tbody>
@@ -158,29 +192,26 @@ const Certificates = () => {
         </div>
       )}
 
-      <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} title="Certificate QR Code">
+      {/* QR Modal */}
+      <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} title="Certificate QR Matrix">
         {selectedCert && (
           <div className="flex flex-col items-center">
-            <div className="bg-white p-4 rounded-xl mb-6">
+            <div className="bg-white p-4 rounded-2xl mb-4 border border-slate-200 shadow-sm">
               {qrBlobUrl ? (
-                <img src={qrBlobUrl} alt="QR Code" className="w-48 h-48" />
+                <img src={qrBlobUrl} alt="QR Code" className="w-48 h-48 rounded-xl" />
               ) : (
-                <div className="w-48 h-48 flex items-center justify-center text-gray-400">Loading...</div>
+                <div className="w-48 h-48 flex items-center justify-center text-slate-400">Loading...</div>
               )}
             </div>
-            <p className="text-sm text-gray-400 mb-1">Patient: <span className="text-white">{selectedCert.patientName}</span></p>
-            <p className="text-xs font-mono text-[#00d4ff] bg-[rgba(0,212,255,0.1)] p-2 rounded mt-2 break-all text-center w-full">
+            <p className="text-sm font-bold text-slate-800 mb-1">{selectedCert.patientName}</p>
+            <p className="text-xs text-slate-500 mb-3">{selectedCert.disease}</p>
+            <p className="text-xs font-mono text-rose-600 bg-rose-50 p-2.5 rounded-xl break-all text-center w-full border border-rose-100 font-bold">
               {selectedCert.certificateId}
             </p>
-            <div className="mt-6 flex gap-4 w-full">
+            <div className="mt-6 flex gap-3 w-full">
               <button className="btn btn-secondary flex-1" onClick={() => setQrModalOpen(false)}>Close</button>
-              <button className="btn btn-primary flex-1" onClick={() => {
-                const a = document.createElement('a');
-                a.href = qrBlobUrl;
-                a.download = `QR_${selectedCert.certificateId.substring(0,8)}.png`;
-                a.click();
-              }}>
-                <Download size={18} /> Save Image
+              <button className="btn btn-primary flex-1" onClick={() => copyToClipboard(selectedCert.certificateId)}>
+                <Copy size={16} /> Copy UUID
               </button>
             </div>
           </div>

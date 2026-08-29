@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, LogOut, User, KeyRound, Lock, Eye, EyeOff, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Shield, LogOut, User, KeyRound, Lock, Eye, EyeOff, Loader2, AlertTriangle, CheckCircle2, HeartPulse } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 import Badge from './Badge';
@@ -20,7 +20,6 @@ const Navbar = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // If account was marked with mustChangePassword, auto-open the change password modal
     if (user?.mustChangePassword) {
       setIsPasswordModalOpen(true);
     }
@@ -51,7 +50,6 @@ const Navbar = () => {
       await authService.changePassword(currentPassword, newPassword);
       toast.success('Password updated successfully!');
       
-      // Update user state so mustChangePassword is false
       if (user) {
         setAuth({ ...user, mustChangePassword: false }, accessToken);
       }
@@ -67,19 +65,33 @@ const Navbar = () => {
     }
   };
 
+  const getBadgeVariant = (role) => {
+    if (role === 'HOSPITAL') return 'pink';
+    if (role === 'STUDENT') return 'purple';
+    if (role === 'VERIFIER') return 'emerald';
+    return 'default';
+  };
+
   return (
     <>
-      <nav className="h-16 fixed top-0 right-0 left-0 md:left-[260px] glass-panel border-x-0 border-t-0 rounded-none z-30 px-6 flex items-center justify-between" style={{ background: 'rgba(10, 15, 30, 0.8)' }}>
-        <div className="flex items-center gap-2 md:hidden">
-          <Shield className="text-[#00d4ff]" />
-          <span className="font-bold text-lg gradient-text">MedVerify</span>
+      <nav className="h-16 fixed top-0 right-0 left-0 md:left-[260px] border-b border-slate-200/80 z-30 px-6 flex items-center justify-between backdrop-blur-md bg-white/85 shadow-sm">
+        <div className="flex items-center gap-2.5 md:hidden">
+          <div className="w-8 h-8 rounded-xl brand-mark flex items-center justify-center text-white shadow-xs">
+            <HeartPulse size={18} />
+          </div>
+          <span className="font-black text-lg gradient-text-mint">MedVerify</span>
         </div>
         
         <div className="hidden md:flex items-center gap-3">
-          {user?.mustChangePassword && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-xs font-medium animate-pulse">
-              <AlertTriangle size={14} />
+          {user?.mustChangePassword ? (
+            <div className="flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-bold animate-pulse">
+              <AlertTriangle size={14} className="text-amber-500" />
               <span>Password change recommended</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full shadow-2xs">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className="text-xs font-bold text-emerald-800">System Online</span>
             </div>
           )}
         </div>
@@ -88,22 +100,22 @@ const Navbar = () => {
           {user && (
             <>
               <div className="flex flex-col items-end mr-1">
-                <span className="text-sm font-medium text-white">{user.username}</span>
-                <div className="flex items-center gap-1">
-                  <Badge variant={user.role === 'ADMIN' ? 'danger' : user.role === 'HOSPITAL' ? 'info' : 'warning'} className="scale-75 origin-right">
+                <span className="text-sm font-extrabold text-slate-800">{user.username}</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Badge variant={getBadgeVariant(user.role)}>
                     {user.role}
                   </Badge>
                 </div>
               </div>
 
-              <div className="h-8 w-8 rounded-full bg-[rgba(255,255,255,0.1)] flex items-center justify-center border border-[rgba(255,255,255,0.2)]">
-                <User size={16} className="text-[#00d4ff]" />
+              <div className="w-9 h-9 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-2xs font-bold">
+                <User size={18} />
               </div>
 
               {/* Change Password Button */}
               <button 
                 onClick={() => setIsPasswordModalOpen(true)}
-                className="p-1.5 text-gray-400 hover:text-[#00d4ff] hover:bg-white/5 rounded-lg transition-all"
+                className="p-2 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all border border-transparent hover:border-emerald-200"
                 title="Change Password"
               >
                 <KeyRound size={18} />
@@ -112,7 +124,7 @@ const Navbar = () => {
               {/* Logout Button */}
               <button 
                 onClick={handleLogout}
-                className="p-1.5 text-gray-400 hover:text-[#ef4444] hover:bg-red-500/10 rounded-lg transition-all"
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-200"
                 title="Logout"
               >
                 <LogOut size={18} />
@@ -130,21 +142,21 @@ const Navbar = () => {
       >
         <form onSubmit={handlePasswordChange} className="space-y-4">
           {user?.mustChangePassword && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-amber-400 text-xs leading-relaxed">
-              <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-amber-800 text-xs leading-relaxed font-medium">
+              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600" />
               <span>For security compliance, this account requires an immediate password update upon first login.</span>
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Current Password</label>
+          <div className="form-group">
+            <label className="form-label">Current Password</label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <Lock size={16} />
               </span>
               <input
                 type={showCurrent ? "text" : "password"}
-                className="w-full bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.12)] focus:border-[#00d4ff] text-white rounded-xl py-2.5 pl-9 pr-10 text-sm outline-none"
+                className="form-input pl-10 pr-10"
                 placeholder="Enter current password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
@@ -153,22 +165,22 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
               >
                 {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">New Password (min 8 chars)</label>
+          <div className="form-group">
+            <label className="form-label">New Password (min 8 chars)</label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <KeyRound size={16} />
               </span>
               <input
                 type={showNew ? "text" : "password"}
-                className="w-full bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.12)] focus:border-[#00d4ff] text-white rounded-xl py-2.5 pl-9 pr-10 text-sm outline-none"
+                className="form-input pl-10 pr-10"
                 placeholder="Enter new strong password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -177,22 +189,22 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600"
               >
                 {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Confirm New Password</label>
+          <div className="form-group">
+            <label className="form-label">Confirm New Password</label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                 <Lock size={16} />
               </span>
               <input
                 type="password"
-                className="w-full bg-[rgba(0,0,0,0.4)] border border-[rgba(255,255,255,0.12)] focus:border-[#00d4ff] text-white rounded-xl py-2.5 pl-9 pr-4 text-sm outline-none"
+                className="form-input pl-10 pr-4"
                 placeholder="Re-type new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -201,14 +213,13 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Password complexity helper */}
-          <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl text-xs space-y-1 text-gray-400">
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1 text-slate-600 font-medium">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={12} className={newPassword.length >= 8 ? "text-emerald-400" : "text-gray-600"} />
+              <CheckCircle2 size={12} className={newPassword.length >= 8 ? "text-emerald-600 font-bold" : "text-slate-400"} />
               <span>At least 8 characters long</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={12} className={newPassword && newPassword === confirmPassword ? "text-emerald-400" : "text-gray-600"} />
+              <CheckCircle2 size={12} className={newPassword && newPassword === confirmPassword ? "text-emerald-600 font-bold" : "text-slate-400"} />
               <span>Passwords match</span>
             </div>
           </div>
@@ -218,7 +229,7 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setIsPasswordModalOpen(false)}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                className="btn btn-ghost"
               >
                 Cancel
               </button>
@@ -226,7 +237,7 @@ const Navbar = () => {
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#00d4ff] to-[#0077ff] hover:from-[#00b8e6] hover:to-[#0066ee] text-white font-medium rounded-xl text-sm transition-all shadow-[0_4px_15px_rgba(0,212,255,0.3)] flex items-center gap-2"
+              className="btn btn-mint"
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : 'Update Password'}
             </button>

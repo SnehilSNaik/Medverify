@@ -119,6 +119,19 @@ public class DataInitializer implements CommandLineRunner {
             log.info("✅ Verifier user created (must change password on first login)");
         }
 
+        // ── 5b. Create sample Student user ───────────────────────────────────
+        if (userRepository.findByUsername("student1").isEmpty()) {
+            User student = new User();
+            student.setUsername("student1");
+            student.setEmail("student1@university.edu");
+            student.setPassword(passwordEncoder.encode("Student@Secure2024!"));
+            student.setRole(UserRole.STUDENT);
+            student.setActive(true);
+            student.setMustChangePassword(true);
+            userRepository.save(student);
+            log.info("✅ Student user created (must change password on first login)");
+        }
+
         // ── 6. Create a sample certificate (for demo purposes) ───────────────
         if (certificateRepository.count() == 0) {
             try {

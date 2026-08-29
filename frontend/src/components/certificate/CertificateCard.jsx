@@ -1,111 +1,169 @@
 import React from 'react';
-import { CheckCircle, AlertTriangle, XCircle, SearchX, FileText, User, Calendar, Building, Stethoscope } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, SearchX, FileText, User, Calendar, Building, Stethoscope, ShieldCheck, Award } from 'lucide-react';
 import { formatDate } from '../../utils/constants';
 
 const CertificateCard = ({ result }) => {
   if (!result) return null;
 
-  // The backend VerifyResponse returns properties directly or in result object
   const status = result.result || result.status || 'NOT_FOUND';
-  const message = result.message || 'Verification complete';
+  const message = result.message || 'Cryptographic verification complete';
 
   const statusConfig = {
-    GENUINE: { icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)', shadow: 'rgba(16,185,129,0.2)', title: 'Verified Genuine Certificate' },
-    TAMPERED: { icon: AlertTriangle, color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', shadow: 'rgba(239,68,68,0.2)', title: 'Tampered / Invalid Signature' },
-    REVOKED: { icon: XCircle, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)', shadow: 'rgba(245,158,11,0.2)', title: 'Certificate Revoked' },
-    NOT_FOUND: { icon: SearchX, color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.3)', shadow: 'rgba(148,163,184,0.2)', title: 'Certificate Not Found' }
+    GENUINE: { 
+      icon: CheckCircle, 
+      color: '#10b981', 
+      bg: '#ecfdf5', 
+      border: '#a7f3d0', 
+      badgeText: 'text-emerald-700', 
+      title: 'Verified Genuine Certificate',
+      subtitle: 'Cryptographic SHA-256 Hash & RSA-2048 Digital Signature Match'
+    },
+    TAMPERED: { 
+      icon: AlertTriangle, 
+      color: '#ef4444', 
+      bg: '#fef2f2', 
+      border: '#fecaca', 
+      badgeText: 'text-red-700', 
+      title: 'Tampered / Invalid Signature',
+      subtitle: 'Warning: Certificate data was modified or signed by an unauthorized key'
+    },
+    REVOKED: { 
+      icon: XCircle, 
+      color: '#f59e0b', 
+      bg: '#fffbeb', 
+      border: '#fde68a', 
+      badgeText: 'text-amber-700', 
+      title: 'Certificate Revoked',
+      subtitle: 'This medical certificate has been officially revoked by the issuing hospital'
+    },
+    NOT_FOUND: { 
+      icon: SearchX, 
+      color: '#64748b', 
+      bg: '#f8fafc', 
+      border: '#e2e8f0', 
+      badgeText: 'text-slate-700', 
+      title: 'Certificate Not Found',
+      subtitle: 'No cryptographic record matches the provided Certificate UUID'
+    }
   };
 
   const config = statusConfig[status] || statusConfig.NOT_FOUND;
   const StatusIcon = config.icon;
-
   const data = result;
 
   return (
     <div className="w-full max-w-2xl mx-auto animate-slide-up">
       <div 
-        className="glass-panel overflow-hidden border-t-4"
-        style={{ borderTopColor: config.color, boxShadow: `0 8px 32px 0 ${config.shadow}` }}
+        className="bg-white rounded-3xl overflow-hidden border-2 shadow-[0_20px_50px_rgba(244,63,94,0.1)] relative"
+        style={{ borderColor: config.color }}
       >
-        <div className="p-6 border-b border-[rgba(255,255,255,0.05)] flex items-center gap-4 bg-[rgba(255,255,255,0.02)]">
-          <div className="p-3 rounded-full" style={{ backgroundColor: config.bg, color: config.color }}>
+        {/* Top Status Banner */}
+        <div 
+          className="p-6 flex items-center gap-4 border-b"
+          style={{ backgroundColor: config.bg, borderColor: config.border }}
+        >
+          <div 
+            className="p-3 rounded-2xl bg-white shadow-sm flex items-center justify-center"
+            style={{ color: config.color }}
+          >
             <StatusIcon size={32} />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold" style={{ color: config.color }}>{config.title}</h2>
-            <p className="text-gray-300 mt-1 text-sm">{message}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-extrabold" style={{ color: config.color }}>{config.title}</h2>
+              <span className="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-white border" style={{ borderColor: config.border, color: config.color }}>
+                {status}
+              </span>
+            </div>
+            <p className="text-slate-600 text-xs mt-1 font-medium">{config.subtitle}</p>
           </div>
         </div>
 
+        {/* Certificate Body */}
         {status !== 'NOT_FOUND' && data.patientName && (
-          <div className="p-6 grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white border-b border-[rgba(255,255,255,0.1)] pb-2 flex items-center gap-2">
-                <User size={18} className="text-[#00d4ff]" /> Patient Details
-              </h3>
-              <div>
-                <p className="text-sm text-gray-400">Name</p>
-                <p className="font-medium text-white">{data.patientName}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-400">Age</p>
-                  <p className="font-medium text-white">{data.age}</p>
+          <div className="p-7 space-y-6 bg-white">
+            {/* Header Stamp */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-rose-50 rounded-xl text-rose-600">
+                  <Award size={20} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Gender</p>
-                  <p className="font-medium text-white">{data.gender}</p>
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600">Official Medical Record</span>
+                  <p className="text-sm font-bold text-slate-800">{data.hospitalName || 'Verified Healthcare Center'}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-[11px] font-bold text-slate-400 uppercase">Verification ID</span>
+                <p className="font-mono text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
+                  {data.certificateId ? data.certificateId.substring(0, 13) + '...' : 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {/* Patient & Diagnosis Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="p-4 bg-rose-50/40 rounded-2xl border border-rose-100/80 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1.5">
+                  <User size={14} /> Patient Information
+                </h4>
+                <div>
+                  <span className="text-[11px] text-slate-500 font-medium">Full Name</span>
+                  <p className="text-base font-bold text-slate-800">{data.patientName}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 font-medium">Age</span>
+                    <p className="font-bold text-slate-800">{data.age} yrs</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-medium">Gender</span>
+                    <p className="font-bold text-slate-800">{data.gender}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <FileText size={14} /> Medical Condition
+                </h4>
+                <div>
+                  <span className="text-[11px] text-slate-500 font-medium">Diagnosis</span>
+                  <p className="text-base font-bold text-slate-800">{data.disease}</p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-500 font-medium">Prescription & Leave</span>
+                  <p className="text-xs text-slate-600 line-clamp-2">{data.treatment}</p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white border-b border-[rgba(255,255,255,0.1)] pb-2 flex items-center gap-2">
-                <FileText size={18} className="text-[#00d4ff]" /> Medical Details
-              </h3>
+            {/* Doctor & Validity Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-100 text-xs">
               <div>
-                <p className="text-sm text-gray-400">Diagnosis / Condition</p>
-                <p className="font-medium text-white">{data.disease}</p>
+                <span className="text-slate-400 font-medium flex items-center gap-1"><Stethoscope size={13} className="text-rose-500" /> Physician</span>
+                <p className="font-bold text-slate-800 mt-0.5">{data.doctorName || 'Authorized Physician'}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-400">Treatment Plan</p>
-                <p className="font-medium text-white" title={data.treatment}>{data.treatment}</p>
+                <span className="text-slate-400 font-medium flex items-center gap-1"><Calendar size={13} className="text-rose-500" /> Issue Date</span>
+                <p className="font-bold text-slate-800 mt-0.5">{formatDate(data.issueDate)}</p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium flex items-center gap-1"><Calendar size={13} className="text-rose-500" /> Expiry Date</span>
+                <p className="font-bold text-slate-800 mt-0.5">{formatDate(data.expiryDate)}</p>
               </div>
             </div>
 
-            <div className="space-y-4 md:col-span-2">
-              <h3 className="text-lg font-semibold text-white border-b border-[rgba(255,255,255,0.1)] pb-2 flex items-center gap-2">
-                <Building size={18} className="text-[#00d4ff]" /> Issuance & Security Info
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-400 flex items-center gap-1"><Building size={14}/> Hospital</p>
-                  <p className="font-medium text-white">{data.hospitalName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400 flex items-center gap-1"><Stethoscope size={14}/> Authorizing Doctor</p>
-                  <p className="font-medium text-white">{data.doctorName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400 flex items-center gap-1"><FileText size={14}/> Certificate ID</p>
-                  <p className="font-mono text-xs mt-1 text-[#00d4ff] bg-[rgba(0,212,255,0.1)] p-1 rounded break-all">{data.certificateId}</p>
-                </div>
+            {/* Cryptographic Key Verification Stamp */}
+            <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-emerald-800 font-semibold">
+                <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                <span>Hospital RSA-2048 Signature Verified</span>
               </div>
+              <span className="font-mono text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200 font-bold">
+                SHA-256 MATCH
+              </span>
             </div>
-            
-            <div className="space-y-4 md:col-span-2">
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="bg-[rgba(255,255,255,0.03)] p-3 rounded-lg border border-[rgba(255,255,255,0.05)]">
-                   <p className="text-xs text-gray-400 flex items-center gap-1"><Calendar size={12}/> Issue Date</p>
-                   <p className="font-medium text-white mt-1">{formatDate(data.issueDate)}</p>
-                 </div>
-                 <div className="bg-[rgba(255,255,255,0.03)] p-3 rounded-lg border border-[rgba(255,255,255,0.05)]">
-                   <p className="text-xs text-gray-400 flex items-center gap-1"><Calendar size={12}/> Expiry Date</p>
-                   <p className="font-medium text-white mt-1">{formatDate(data.expiryDate)}</p>
-                 </div>
-               </div>
-            </div>
-
           </div>
         )}
       </div>

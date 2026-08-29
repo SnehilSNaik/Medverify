@@ -21,8 +21,10 @@ public class SignupRequest {
     @NotBlank(message = "Account role is required")
     private String role; // "VERIFIER" or "HOSPITAL"
 
-    // Verifier fields
+    // Verifier / Student fields
     private String organizationName;
+    private String organizationType;
+    private String fullName;
 
     // Hospital fields
     private String hospitalName;
@@ -46,6 +48,12 @@ public class SignupRequest {
 
     public String getOrganizationName() { return organizationName; }
     public void setOrganizationName(String organizationName) { this.organizationName = organizationName; }
+
+    public String getOrganizationType() { return organizationType; }
+    public void setOrganizationType(String organizationType) { this.organizationType = organizationType; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 
     public String getHospitalName() { return hospitalName; }
     public void setHospitalName(String hospitalName) { this.hospitalName = hospitalName; }

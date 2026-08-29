@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hospitalService } from '../../services/hospitalService';
-import { User, FileText, ShieldCheck, Download, Stethoscope } from 'lucide-react';
+import Modal from '../../components/common/Modal';
+import { User, FileText, ShieldCheck, Download, Stethoscope, HeartPulse, CheckCircle2, ArrowLeft, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const IssueCertificate = () => {
@@ -10,6 +11,12 @@ const IssueCertificate = () => {
   const [submitting, setSubmitting] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [qrBlobUrl, setQrBlobUrl] = useState(null);
+  
+  // Quick Add Doctor modal state
+  const [isAddDoctorOpen, setIsAddDoctorOpen] = useState(false);
+  const [newDoctorData, setNewDoctorData] = useState({ name: '', registrationNumber: '', specialization: '', phone: '' });
+  const [addingDoctor, setAddingDoctor] = useState(false);
+
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -66,10 +73,9 @@ const IssueCertificate = () => {
       };
 
       const result = await hospitalService.issueCertificate(payload);
-      toast.success('Certificate issued and digitally signed with RSA-256');
+      toast.success('Certificate issued & digitally signed!');
       setSuccessData(result);
       
-      // Fetch the QR code for display
       if (result.certificateId) {
         try {
           const qrBlob = await hospitalService.getQR(result.certificateId);
@@ -106,25 +112,25 @@ const IssueCertificate = () => {
   if (successData) {
     return (
       <div className="max-w-2xl mx-auto animate-fade-in">
-        <div className="glass-panel p-8 text-center flex flex-col items-center">
-          <div className="w-20 h-20 bg-[rgba(16,185,129,0.1)] rounded-full flex items-center justify-center mb-6 border border-[#10b981]">
-            <ShieldCheck size={40} className="text-[#10b981]" />
+        <div className="bg-white rounded-3xl p-8 text-center flex flex-col items-center border border-emerald-200 shadow-[0_20px_50px_rgba(16,185,129,0.12)]">
+          <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-5 border-2 border-emerald-300 text-emerald-600 shadow-sm">
+            <CheckCircle2 size={42} />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Certificate Issued & Digitally Signed</h2>
-          <p className="text-gray-400 mb-8">RSA signature generated using hospital private key.</p>
+          <h2 className="text-2xl font-extrabold text-slate-800 mb-1.5">Certificate Issued & Digitally Signed</h2>
+          <p className="text-slate-500 text-sm mb-6 font-medium">RSA-2048 signature generated using hospital cryptographic key.</p>
           
-          <div className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] rounded-xl p-6 mb-8">
-            <p className="text-sm text-gray-400 mb-1">Unique Certificate ID (UUID)</p>
-            <p className="font-mono text-lg text-[#00d4ff] bg-[rgba(0,212,255,0.05)] py-2 px-4 rounded-lg break-all border border-[rgba(0,212,255,0.2)]">
+          <div className="w-full bg-slate-50 border border-slate-200/80 rounded-2xl p-6 mb-6">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Unique Certificate UUID</p>
+            <p className="font-mono text-sm font-bold text-rose-600 bg-white py-2 px-4 rounded-xl break-all border border-rose-100 shadow-2xs">
               {successData.certificateId}
             </p>
             
-            <div className="mt-6 flex justify-center">
-              <div className="bg-white p-4 rounded-xl shadow-lg">
+            <div className="mt-5 flex justify-center">
+              <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
                 {qrBlobUrl ? (
-                  <img src={qrBlobUrl} alt="QR Code" className="w-48 h-48" />
+                  <img src={qrBlobUrl} alt="QR Code" className="w-44 h-44 rounded-xl" />
                 ) : (
-                  <div className="w-48 h-48 flex items-center justify-center text-gray-800 font-medium">Loading QR...</div>
+                  <div className="w-44 h-44 flex items-center justify-center text-slate-400 font-medium">Loading QR...</div>
                 )}
               </div>
             </div>
@@ -134,7 +140,7 @@ const IssueCertificate = () => {
             <button onClick={() => setSuccessData(null)} className="btn btn-secondary flex-1">
               Issue Another
             </button>
-            <button onClick={handleDownloadPDF} className="btn btn-primary flex-1">
+            <button onClick={handleDownloadPDF} className="btn btn-primary flex-1 shadow-[0_6px_20px_rgba(244,63,94,0.35)]">
               <Download size={18} /> Download Official PDF
             </button>
           </div>
@@ -143,19 +149,72 @@ const IssueCertificate = () => {
     );
   }
 
+  const handleQuickAddDoctor = async (e) => {
+    e.preventDefault();
+    if (!newDoctorData.name || !newDoctorData.registrationNumber || !newDoctorData.specialization) {
+      toast.error('Please fill in all required doctor fields');
+      return;
+    }
+    setAddingDoctor(true);
+    try {
+      const added = await hospitalService.addDoctor(newDoctorData);
+      toast.success(`Dr. ${newDoctorData.name} registered to hospital!`);
+      // Refresh doctor list
+      const data = await hospitalService.getDoctors();
+      const activeList = (data || []).filter(d => d.active);
+      setDoctors(activeList);
+      // Auto-select the newly added doctor
+      if (added?.id) {
+        setFormData(prev => ({ ...prev, doctorId: added.id }));
+      }
+      setIsAddDoctorOpen(false);
+      setNewDoctorData({ name: '', registrationNumber: '', specialization: '', phone: '' });
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to register doctor');
+    } finally {
+      setAddingDoctor(false);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2"><ShieldCheck className="text-[#00d4ff]"/> Issue Secure Certificate</h1>
-        <p className="text-gray-400 text-sm mt-1">Fill in the medical details to generate an RSA digitally signed medical certificate</p>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2.5">
+            <ShieldCheck className="text-rose-500" size={28} /> Issue Secure Certificate
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Fill in the medical details to generate an RSA digitally signed medical certificate</p>
+        </div>
+        <button onClick={() => navigate('/hospital/dashboard')} className="btn btn-ghost text-xs">
+          <ArrowLeft size={16} /> Back to Hub
+        </button>
       </div>
 
+      {doctors.length === 0 && !loading && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-800">
+          <div className="flex items-center gap-2.5">
+            <Stethoscope className="text-amber-600 shrink-0" size={20} />
+            <div className="text-xs font-semibold">
+              <span className="font-bold">No Authorized Doctors Found:</span> You need at least one registered doctor to issue certificates.
+            </div>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setIsAddDoctorOpen(true)}
+            className="btn btn-primary text-xs py-2 px-3.5 shadow-xs whitespace-nowrap"
+          >
+            <Plus size={14} /> Register Doctor Now
+          </button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="glass-panel p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 border-b border-[rgba(255,255,255,0.1)] pb-2">
-            <User size={18} className="text-[#00d4ff]" /> Patient Information
+        {/* Patient Info Card */}
+        <div className="glass-card border-rose-100">
+          <h3 className="text-base font-extrabold text-slate-800 mb-4 flex items-center gap-2 border-b border-rose-100 pb-2.5">
+            <User size={18} className="text-rose-500" /> Patient Information
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="form-group">
               <label className="form-label">Full Name *</label>
               <input required type="text" name="patientName" className="form-input" value={formData.patientName} onChange={handleChange} placeholder="Patient's full legal name" />
@@ -177,31 +236,42 @@ const IssueCertificate = () => {
           </div>
         </div>
 
-        <div className="glass-panel p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 border-b border-[rgba(255,255,255,0.1)] pb-2">
-            <FileText size={18} className="text-[#00d4ff]" /> Medical Information
+        {/* Medical Info Card */}
+        <div className="glass-card border-rose-100">
+          <h3 className="text-base font-extrabold text-slate-800 mb-4 flex items-center gap-2 border-b border-rose-100 pb-2.5">
+            <FileText size={18} className="text-rose-500" /> Medical Diagnosis & Leave
           </h3>
           <div className="space-y-4">
             <div className="form-group">
               <label className="form-label">Diagnosis / Condition *</label>
-              <input required type="text" name="disease" className="form-input" value={formData.disease} onChange={handleChange} placeholder="e.g. Acute Typhoid Fever" />
+              <input required type="text" name="disease" className="form-input" value={formData.disease} onChange={handleChange} placeholder="e.g. Acute Viral Bronchitis" />
             </div>
             <div className="form-group">
-              <label className="form-label">Recommended Treatment / Medical Leave *</label>
-              <textarea required name="treatment" className="form-input min-h-[100px]" value={formData.treatment} onChange={handleChange} placeholder="e.g. Advised complete bed rest for 7 days with antibiotic course..."></textarea>
+              <label className="form-label">Recommended Treatment / Prescribed Leave *</label>
+              <textarea required name="treatment" className="form-input min-h-[90px]" value={formData.treatment} onChange={handleChange} placeholder="e.g. Advised complete bed rest for 5 days with oral antibiotics..."></textarea>
             </div>
           </div>
         </div>
 
-        <div className="glass-panel p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 border-b border-[rgba(255,255,255,0.1)] pb-2">
-            <Stethoscope size={18} className="text-[#00d4ff]" /> Authorization & Dates
+        {/* Authorization Card */}
+        <div className="glass-card border-rose-100">
+          <h3 className="text-base font-extrabold text-slate-800 mb-4 flex items-center gap-2 border-b border-rose-100 pb-2.5">
+            <Stethoscope size={18} className="text-rose-500" /> Physician Authorization & Dates
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="form-group md:col-span-1">
-              <label className="form-label">Authorizing Doctor *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="form-label mb-0">Authorizing Doctor *</label>
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddDoctorOpen(true)}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 transition-colors"
+                >
+                  <Plus size={13} /> Add Doctor
+                </button>
+              </div>
               <select required name="doctorId" className="form-select" value={formData.doctorId} onChange={handleChange} disabled={loading}>
-                <option value="">Select Doctor</option>
+                <option value="">{doctors.length === 0 ? "No doctors available (click + Add)" : "Select Doctor"}</option>
                 {doctors.map(d => (
                   <option key={d.id} value={d.id}>{d.name} ({d.specialization})</option>
                 ))}
@@ -218,15 +288,44 @@ const IssueCertificate = () => {
           </div>
         </div>
 
-        <div className="flex justify-end gap-4">
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-4 pt-2">
           <button type="button" onClick={() => navigate('/hospital/dashboard')} className="btn btn-secondary">
             Cancel
           </button>
-          <button type="submit" className="btn btn-primary px-8" disabled={submitting}>
+          <button type="submit" className="btn btn-primary px-8 shadow-[0_6px_22px_rgba(244,63,94,0.35)]" disabled={submitting || doctors.length === 0}>
             {submitting ? 'Signing Certificate...' : 'Issue & Sign Certificate'}
           </button>
         </div>
       </form>
+
+      {/* Quick Add Doctor Modal */}
+      <Modal isOpen={isAddDoctorOpen} onClose={() => setIsAddDoctorOpen(false)} title="Register Doctor to Hospital">
+        <form onSubmit={handleQuickAddDoctor} className="space-y-4">
+          <div className="form-group">
+            <label className="form-label">Full Name *</label>
+            <input required type="text" className="form-input" value={newDoctorData.name} onChange={e => setNewDoctorData({...newDoctorData, name: e.target.value})} placeholder="e.g. Dr. John Smith, MD" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Medical Registration / License No. *</label>
+            <input required type="text" className="form-input" value={newDoctorData.registrationNumber} onChange={e => setNewDoctorData({...newDoctorData, registrationNumber: e.target.value})} placeholder="e.g. MED-REG-10499" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Specialization / Department *</label>
+            <input required type="text" className="form-input" value={newDoctorData.specialization} onChange={e => setNewDoctorData({...newDoctorData, specialization: e.target.value})} placeholder="e.g. General Medicine / Pulmonology" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Contact Phone</label>
+            <input type="text" className="form-input" value={newDoctorData.phone} onChange={e => setNewDoctorData({...newDoctorData, phone: e.target.value})} placeholder="+1-555-0101" />
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsAddDoctorOpen(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={addingDoctor}>
+              {addingDoctor ? 'Registering...' : 'Register & Select Doctor'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

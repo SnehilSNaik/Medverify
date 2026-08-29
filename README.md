@@ -159,6 +159,18 @@ verification_logs   -- Every verification attempt logged
 
 ## 🚀 Setup Instructions
 
+### Docker (recommended)
+
+From the project root, start the full stack (React frontend, Spring Boot API, and MySQL):
+
+```bash
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). The frontend proxies `/api` requests to the backend, and MySQL data is retained in the `mysql-data` Docker volume.
+
+For non-default credentials or a different public URL, copy `.env.example` to `.env`, replace its placeholder secrets, and then run Compose. To stop the stack, use `docker compose down`; append `-v` only if you intentionally want to erase the database volume.
+
 ### 1. Clone & Navigate
 ```bash
 git clone <repo-url>

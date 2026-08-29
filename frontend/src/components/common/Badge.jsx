@@ -1,18 +1,24 @@
 import React from 'react';
 
-const Badge = ({ children, variant = 'default', className = '' }) => {
+const Badge = ({ children, variant = 'default', className = '', style = {} }) => {
   const variants = {
-    success: 'bg-[rgba(16,185,129,0.1)] text-[#10b981] border-[#10b981]',
-    danger: 'bg-[rgba(239,68,68,0.1)] text-[#ef4444] border-[#ef4444]',
-    warning: 'bg-[rgba(245,158,11,0.1)] text-[#f59e0b] border-[#f59e0b]',
-    info: 'bg-[rgba(0,212,255,0.1)] text-[#00d4ff] border-[#00d4ff]',
-    default: 'bg-[rgba(255,255,255,0.1)] text-[#f0f4ff] border-[rgba(255,255,255,0.2)]'
+    pink: 'bg-rose-50 text-rose-700 border-rose-200',
+    purple: 'bg-pink-50 text-pink-700 border-pink-200',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold',
+    danger: 'bg-red-50 text-red-700 border-red-200 font-semibold',
+    warning: 'bg-amber-50 text-amber-700 border-amber-200 font-semibold',
+    info: 'bg-teal-50 text-teal-700 border-teal-200 font-semibold',
+    default: 'bg-slate-100 text-slate-700 border-slate-200'
   };
 
   const styleClass = variants[variant] || variants.default;
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styleClass} ${className}`}>
+    <span 
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border shadow-xs ${styleClass} ${className}`}
+      style={style}
+    >
       {children}
     </span>
   );

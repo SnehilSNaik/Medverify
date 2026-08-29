@@ -1,7 +1,7 @@
 import useAuthStore from '../store/authStore';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, accessToken, setAuth, logout } = useAuthStore();
+  const { user, isAuthenticated, accessToken, setAuth, logout, linkedCertificates, addLinkedCertificate, removeLinkedCertificate } = useAuthStore();
   
   return {
     user,
@@ -9,8 +9,11 @@ export const useAuth = () => {
     accessToken,
     setAuth,
     logout,
-    isAdmin: user?.role === 'ADMIN',
     isHospital: user?.role === 'HOSPITAL',
-    isVerifier: user?.role === 'VERIFIER'
+    isStudent: user?.role === 'STUDENT',
+    isVerifier: user?.role === 'VERIFIER',
+    linkedCertificates,
+    addLinkedCertificate,
+    removeLinkedCertificate,
   };
 };

@@ -68,8 +68,8 @@ public class QRCodeService {
      * Format: {"certificateId":"<id>","verifyUrl":"<url>"}
      */
     private String buildQRContent(String certificateId) {
-        // Points to the React frontend verification route
-        String verifyUrl = "http://localhost:5173/verify/" + certificateId;
+        // Points to the public frontend verification route configured for this deployment.
+        String verifyUrl = baseUrl + "/verify/" + certificateId;
         return "{\"certificateId\":\"" + certificateId + "\",\"verifyUrl\":\"" + verifyUrl + "\"}";
     }
 }

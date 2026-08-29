@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Shield, ScanLine, Keyboard, ArrowLeft, Smartphone, QrCode, CheckCircle2 } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Shield, ScanLine, Keyboard, ArrowLeft, HeartPulse, CheckCircle2, ShieldCheck, Sparkles, Building2, User, KeyRound } from 'lucide-react';
 import { verificationService } from '../../services/verificationService';
 import QRScanner from '../../components/certificate/QRScanner';
 import CertificateCard from '../../components/certificate/CertificateCard';
@@ -11,15 +11,15 @@ import { useAuth } from '../../hooks/useAuth';
 const Verify = () => {
   const { certificateId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
-  const [activeTab, setActiveTab] = useState('scan'); // 'scan' | 'manual'
-  const [scannedId, setScannedId] = useState('');
+  const [activeTab, setActiveTab] = useState(certificateId ? 'manual' : 'scan');
+  const [scannedId, setScannedId] = useState(certificateId || '');
   
   const [formData, setFormData] = useState({
     certificateId: certificateId || '',
     verifierName: user?.username || '',
-    verifierOrganization: user?.hospitalName || (user?.role === 'ADMIN' ? 'System Admin' : '')
+    verifierOrganization: user?.organizationName || user?.hospitalName || ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -27,8 +27,8 @@ const Verify = () => {
 
   useEffect(() => {
     if (certificateId) {
-      setActiveTab('manual');
       setFormData(prev => ({ ...prev, certificateId }));
+      setScannedId(certificateId);
     }
   }, [certificateId]);
 
@@ -40,9 +40,7 @@ const Verify = () => {
         const parts = url.pathname.split('/');
         id = parts[parts.length - 1];
       }
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
     
     setScannedId(id);
     setFormData(prev => ({ ...prev, certificateId: id }));
@@ -57,7 +55,7 @@ const Verify = () => {
     if (e) e.preventDefault();
     
     if (!formData.certificateId || !formData.verifierName || !formData.verifierOrganization) {
-      toast.error('Please fill all required fields (Certificate ID, Verifier Name, Organization)');
+      toast.error('Please fill in all verification fields');
       return;
     }
 
@@ -73,13 +71,13 @@ const Verify = () => {
       setResult(response);
       const statusResult = response.result || response.status;
       if (statusResult === 'GENUINE') toast.success('Certificate Verified as Genuine!');
-      else if (statusResult === 'TAMPERED') toast.error('WARNING: Certificate signature tampered or invalid!');
-      else if (statusResult === 'REVOKED') toast.error('Certificate has been revoked by hospital');
+      else if (statusResult === 'TAMPERED') toast.error('WARNING: Certificate signature tampered!');
+      else if (statusResult === 'REVOKED') toast.error('Certificate has been revoked');
       else toast.error('Certificate not found');
     } catch (error) {
       setResult({
         result: 'NOT_FOUND',
-        message: error.response?.data?.message || 'Could not connect to verification server or certificate ID invalid.'
+        message: error.response?.data?.message || 'Verification failed'
       });
       toast.error('Verification failed');
     } finally {
@@ -88,72 +86,77 @@ const Verify = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] py-10 px-4 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#00d4ff] opacity-5 rounded-full blur-[100px] pointer-events-none"></div>
-      
-      <div className="max-w-4xl mx-auto relative z-10">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Shield size={36} className="text-[#00d4ff]" />
-            <div>
-              <h1 className="text-2xl font-bold gradient-text">MedVerify Public Verification Portal</h1>
-              <p className="text-gray-400 text-sm">SHA-256 Hash & RSA Cryptographic Signature Authentication</p>
-            </div>
+    <div className="public-shell min-h-screen flex flex-col justify-between p-4 md:p-8 relative">
+
+      {/* Header Bar */}
+      <header className="portal-header max-w-5xl w-full mx-auto flex items-center justify-between py-4 mb-4 border-b relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl brand-mark flex items-center justify-center text-white shadow-sm">
+            <HeartPulse size={22} className="animate-pulse" />
           </div>
-          {isAuthenticated ? (
-            <button onClick={() => navigate(-1)} className="btn btn-ghost border border-[rgba(255,255,255,0.1)]">
-              <ArrowLeft size={16} /> Back to Dashboard
-            </button>
-          ) : (
-            <button onClick={() => navigate('/login')} className="btn btn-secondary">
-              Login to Staff Portal
-            </button>
-          )}
+          <div>
+            <span className="font-black text-xl tracking-tight gradient-text-mint">MedVerify</span>
+            <span className="text-[10px] uppercase font-extrabold text-slate-400 block tracking-wider">Public Verification Portal</span>
+          </div>
         </div>
 
-        {/* Mobile Phone Verification Demonstration Hero Banner */}
-        <div className="glass-panel p-6 mb-8 border border-[rgba(0,212,255,0.2)] bg-[rgba(0,212,255,0.03)] flex flex-col md:flex-row items-center gap-6 rounded-2xl">
-          <div className="md:w-1/3 w-full rounded-xl overflow-hidden border border-[rgba(255,255,255,0.1)] shadow-lg">
+        <div>
+          {isAuthenticated ? (
+            <button 
+              onClick={() => {
+                if (user?.role === 'HOSPITAL') navigate('/hospital/dashboard');
+                else if (user?.role === 'STUDENT') navigate('/student/dashboard');
+                else navigate('/institution/dashboard');
+              }}
+              className="btn btn-secondary text-xs font-extrabold"
+            >
+              Go to Dashboard →
+            </button>
+          ) : (
+            <Link to="/login" className="btn btn-secondary text-xs font-extrabold">
+              Sign In to Portal →
+            </Link>
+          )}
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-4xl w-full mx-auto flex-1 my-auto relative z-10">
+        <div className="text-center mb-7 flex flex-col items-center">
+          {/* Floating 3D Shield */}
+          <div className="w-20 h-20 mb-3 animate-float">
             <img 
-              src="/phone_qr_scan_demo.jpg" 
-              alt="Smartphone QR Scanner Demo" 
-              className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300"
+              src="/medical_shield_3d.jpg" 
+              alt="3D Shield" 
+              className="w-full h-full object-contain rounded-2xl drop-shadow-[0_10px_15px_rgba(0,0,0,0.15)]"
             />
           </div>
-          <div className="md:w-2/3 w-full space-y-2">
-            <div className="flex items-center gap-2">
-              <Smartphone className="text-[#00d4ff]" size={20} />
-              <span className="text-xs font-bold uppercase tracking-wider text-[#00d4ff]">Smartphone Scan & Verify</span>
-            </div>
-            <h3 className="text-xl font-bold text-white">Verify Any Medical Certificate with Your Phone</h3>
-            <p className="text-sm text-gray-300 leading-relaxed">
-              Every official MedVerify certificate includes a secure QR Code. Scan it using your smartphone camera to instantly verify its SHA-256 hash and RSA digital signature in real time.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-[#10b981]" /> Zero App Install Needed</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-[#10b981]" /> Instant Tamper Detection</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-[#10b981]" /> RSA 2048-Bit Signed</span>
-            </div>
-          </div>
+
+          <div className="trust-chip inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-bold mb-3"><ShieldCheck size={13} /> Secure verification</div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+            Verify a certificate
+          </h1>
+          <p className="text-slate-500 text-sm max-w-lg mx-auto font-medium">
+            Scan a certificate QR code or enter the certificate UUID below.
+          </p>
         </div>
 
         {!result && !loading && (
-          <div className="glass-panel overflow-hidden mb-8">
-            <div className="flex border-b border-[rgba(255,255,255,0.1)]">
+          <div className="verification-card bg-white overflow-hidden">
+            <div className="flex border-b border-slate-200 bg-slate-50/70">
               <button 
                 type="button"
-                className={`flex-1 py-4 flex items-center justify-center gap-2 font-medium transition-colors ${activeTab === 'scan' ? 'bg-[rgba(0,212,255,0.1)] text-[#00d4ff] border-b-2 border-[#00d4ff]' : 'text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.02)]'}`}
+                className={`flex-1 py-4 flex items-center justify-center gap-2 font-extrabold text-sm transition-all ${activeTab === 'scan' ? 'bg-white text-emerald-800 border-b-2 border-emerald-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 onClick={() => setActiveTab('scan')}
               >
-                <ScanLine size={18} /> Phone Camera / Demo Scanner
+                <ScanLine size={18} /> Phone Camera Scanner
               </button>
               <button 
                 type="button"
-                className={`flex-1 py-4 flex items-center justify-center gap-2 font-medium transition-colors ${activeTab === 'manual' ? 'bg-[rgba(0,212,255,0.1)] text-[#00d4ff] border-b-2 border-[#00d4ff]' : 'text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.02)]'}`}
+                className={`flex-1 py-4 flex items-center justify-center gap-2 font-extrabold text-sm transition-all ${activeTab === 'manual' ? 'bg-white text-emerald-800 border-b-2 border-emerald-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 onClick={() => setActiveTab('manual')}
               >
-                <Keyboard size={18} /> Enter Certificate ID
+                <Keyboard size={18} /> Enter Certificate UUID
               </button>
             </div>
 
@@ -162,23 +165,23 @@ const Verify = () => {
                 <div className="animate-fade-in space-y-6">
                   <QRScanner onResult={handleQRResult} />
                   {scannedId && (
-                    <div className="bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] rounded-lg p-4 text-center">
-                      <p className="text-sm text-gray-300">Scanned Certificate ID:</p>
-                      <p className="font-mono text-[#10b981] font-bold text-lg">{scannedId}</p>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
+                      <p className="text-xs text-emerald-700 font-bold uppercase tracking-wider">Scanned Certificate UUID</p>
+                      <p className="font-mono text-emerald-900 font-bold text-sm mt-1">{scannedId}</p>
                     </div>
                   )}
                 </div>
               )}
 
-              <form onSubmit={handleVerify} className="mt-8 space-y-6">
+              <form onSubmit={handleVerify} className="mt-8 space-y-5">
                 {activeTab === 'manual' && (
                   <div className="form-group animate-fade-in">
-                    <label className="form-label">Certificate ID (UUID) *</label>
+                    <label className="form-label">Certificate UUID *</label>
                     <input 
                       type="text" 
                       name="certificateId" 
-                      className="form-input font-mono" 
-                      placeholder="e.g. 79fca1d5-0550-4ba7-898b-c9201e440a36"
+                      className="form-input font-mono text-sm py-3" 
+                      placeholder="e.g. 8c1b9007-46de-4e9c-a8ba-b1abb37f869c"
                       value={formData.certificateId}
                       onChange={handleChange}
                       required
@@ -186,26 +189,22 @@ const Verify = () => {
                   </div>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
                   <div className="form-group">
-                    <label className="form-label">Verifier Name *</label>
+                    <label className="form-label">Your Full Name *</label>
                     <input 
-                      type="text" 
-                      name="verifierName" 
-                      className="form-input" 
-                      placeholder="Your full name (e.g. Inspector Officer)"
+                      type="text" name="verifierName" className="form-input" 
+                      placeholder="e.g. HR Manager / Registrar"
                       value={formData.verifierName}
                       onChange={handleChange}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Organization / Company *</label>
+                    <label className="form-label">Your Organization *</label>
                     <input 
-                      type="text" 
-                      name="verifierOrganization" 
-                      className="form-input" 
-                      placeholder="e.g. Acme Corp / University Admissions"
+                      type="text" name="verifierOrganization" className="form-input" 
+                      placeholder="e.g. Acme Corp / Stanford University"
                       value={formData.verifierOrganization}
                       onChange={handleChange}
                       required
@@ -215,10 +214,10 @@ const Verify = () => {
 
                 <button 
                   type="submit" 
-                  className="btn btn-primary w-full py-3.5 text-base mt-4 shadow-[0_0_25px_rgba(0,212,255,0.35)] hover:shadow-[0_0_35px_rgba(0,212,255,0.5)] font-semibold rounded-xl flex items-center justify-center gap-2"
+                  className="btn btn-mint w-full py-3.5 text-base font-extrabold shadow-[0_6px_22px_rgba(16,185,129,0.35)]"
                   disabled={loading || (!formData.certificateId && activeTab === 'manual')}
                 >
-                  <Shield size={20} /> Verify Authenticity Now
+                  <ShieldCheck size={20} /> Verify Authenticity Now
                 </button>
               </form>
             </div>
@@ -226,10 +225,10 @@ const Verify = () => {
         )}
 
         {loading && (
-          <div className="glass-panel p-16 flex flex-col items-center justify-center min-h-[400px]">
+          <div className="bg-white border border-emerald-100 rounded-3xl p-16 flex flex-col items-center justify-center min-h-[380px] shadow-sm">
             <LoadingSpinner />
-            <p className="mt-6 text-[#00d4ff] font-medium animate-pulse text-lg">Running Cryptographic Verification...</p>
-            <p className="text-gray-400 text-sm mt-2 text-center max-w-sm">Re-computing SHA-256 hash and verifying RSA 2048-bit digital signature with hospital public key</p>
+            <p className="mt-6 text-emerald-700 font-extrabold animate-pulse text-lg">Running Cryptographic Verification...</p>
+            <p className="text-slate-400 text-xs mt-1.5 text-center max-w-sm font-medium">Re-computing SHA-256 hash and verifying RSA digital signature</p>
           </div>
         )}
 
@@ -244,7 +243,12 @@ const Verify = () => {
             <CertificateCard result={result} />
           </div>
         )}
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="max-w-4xl w-full mx-auto text-center py-4 border-t border-emerald-100 text-xs text-slate-400 font-medium mt-8 relative z-10">
+        MedVerify Platform
+      </footer>
     </div>
   );
 };
