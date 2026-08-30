@@ -132,12 +132,12 @@ public class DataInitializer implements CommandLineRunner {
             log.info("✅ Student user created (must change password on first login)");
         }
 
-        // ── 6. Create a sample certificate (for demo purposes) ───────────────
+        // ── 6. Create sample certificates (for demo and verification testing) ──
         if (certificateRepository.count() == 0) {
             try {
-                // Build the certificate
+                // Build a genuine verified certificate
                 MedicalCertificate cert = new MedicalCertificate();
-                cert.setCertificateId(UUID.randomUUID().toString());
+                cert.setCertificateId("CERT-GENUINE-2024-001");
                 cert.setPatientName("Jane Doe");
                 cert.setAge(28);
                 cert.setGender(Gender.FEMALE);
@@ -157,16 +157,34 @@ public class DataInitializer implements CommandLineRunner {
                 String privatePem = cryptoService.decryptPrivateKey(hospital.getPrivateKeyEncrypted());
                 java.security.PrivateKey privateKey = cryptoService.pemToPrivateKey(privatePem);
                 cert.setDigitalSignature(cryptoService.signData(hash, privateKey));
-
-                // Generate QR code (base64)
-                com.medverify.qr.QRCodeService qrCodeService;
-                // QR is set after cert is saved (but we do it inline here for the seeder)
-                cert.setQrCodeData(""); // Will be null for demo cert, that's fine
+                cert.setQrCodeData("");
 
                 MedicalCertificate saved = certificateRepository.save(cert);
-                log.info("✅ Sample certificate created: ID = {}", saved.getCertificateId());
+                log.info("✅ Sample genuine certificate created: ID = {}", saved.getCertificateId());
                 log.info("   Patient: Jane Doe | Doctor: Dr. John Smith | Hospital: City General Hospital");
                 log.info("   Use this ID to test verification: {}", saved.getCertificateId());
+
+                // Also create a sample revoked certificate to test revocation detection
+                MedicalCertificate revokedCert = new MedicalCertificate();
+                revokedCert.setCertificateId("CERT-REVOKED-2024-999");
+                revokedCert.setPatientName("Robert Johnson");
+                revokedCert.setAge(45);
+                revokedCert.setGender(Gender.MALE);
+                revokedCert.setDisease("Acute Gastritis");
+                revokedCert.setTreatment("Antacids and clinical bed rest for 10 days");
+                revokedCert.setDoctor(doctor);
+                revokedCert.setHospital(hospital);
+                revokedCert.setIssueDate(LocalDate.now().minusDays(10));
+                revokedCert.setExpiryDate(LocalDate.now().plusDays(5));
+                revokedCert.setStatus(CertificateStatus.REVOKED);
+
+                String canonicalRevoked = cryptoService.canonicalizeCertificate(revokedCert);
+                String hashRevoked = cryptoService.computeSHA256Hash(canonicalRevoked);
+                revokedCert.setCertificateHash(hashRevoked);
+                revokedCert.setDigitalSignature(cryptoService.signData(hashRevoked, privateKey));
+                revokedCert.setQrCodeData("");
+                certificateRepository.save(revokedCert);
+                log.info("✅ Sample revoked certificate created: ID = CERT-REVOKED-2024-999");
             } catch (Exception e) {
                 log.warn("Could not create sample certificate: {}", e.getMessage());
             }

@@ -18,9 +18,24 @@ import org.springframework.web.bind.annotation.*;
 public class VerificationController {
 
     private final VerificationService verificationService;
+    private final com.medverify.service.AIForgeryService aiForgeryService;
 
-    public VerificationController(VerificationService verificationService) {
+    public VerificationController(VerificationService verificationService, com.medverify.service.AIForgeryService aiForgeryService) {
         this.verificationService = verificationService;
+        this.aiForgeryService = aiForgeryService;
+    }
+
+    /**
+     * POST /api/verify/ai-analyze
+     * Public AI Forgery analysis endpoint.
+     */
+    @PostMapping("/ai-analyze")
+    public ResponseEntity<ApiResponse<AIForgeryResponse>> analyzeDocument(
+            @RequestBody AIForgeryRequest request,
+            HttpServletRequest httpRequest) {
+        String ip = getClientIp(httpRequest);
+        AIForgeryResponse result = aiForgeryService.analyzeDocument(request, ip);
+        return ResponseEntity.ok(ApiResponse.success("AI Forensic Analysis Complete", result));
     }
 
     /**

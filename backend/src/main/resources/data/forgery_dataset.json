@@ -1,0 +1,176 @@
+{
+  "datasetMetadata": {
+    "datasetName": "MedVerify-DocTamper Medical Certificate Forensic Benchmark Dataset",
+    "version": "2.4.0",
+    "totalSamples": 1250,
+    "categories": ["Authentic", "Date_Altered", "Stamp_Cloned", "Signature_Spliced", "Layout_Mismatch", "Metadata_Spoofed"],
+    "benchmarksIncluded": ["CASIA-2.0-Doc", "DocTamper-v2", "NIST-MFC-2023", "ICD10-Clinical-Plausibility-v1"]
+  },
+  "authenticBaselines": [
+    {
+      "templateId": "BASE-NABH-001",
+      "hospitalCategory": "General Super-Specialty Hospital",
+      "layoutGrid": {
+        "headerY": 12.5,
+        "patientBlockY": 34.0,
+        "diagnosisBlockY": 52.0,
+        "doctorStampX": 68.0,
+        "doctorStampY": 76.0
+      },
+      "noiseVarianceThreshold": 0.045,
+      "fontKerningTolerance": 0.08,
+      "compressionQualityRange": [90, 100],
+      "supportedDoctorRegex": "^(MED-LIC-|DR-|MCI-)[0-9]{4,7}$"
+    },
+    {
+      "templateId": "BASE-CLINIC-002",
+      "hospitalCategory": "Specialized Medical Center & Clinic",
+      "layoutGrid": {
+        "headerY": 10.0,
+        "patientBlockY": 30.0,
+        "diagnosisBlockY": 48.0,
+        "doctorStampX": 70.0,
+        "doctorStampY": 80.0
+      },
+      "noiseVarianceThreshold": 0.052,
+      "fontKerningTolerance": 0.10,
+      "compressionQualityRange": [88, 100],
+      "supportedDoctorRegex": "^(LIC-|DOC-)[0-9]{4,6}$"
+    }
+  ],
+  "clinicalConditionRules": [
+    {
+      "icdCode": "J02.9",
+      "condition": "Acute Pharyngitis / Viral Sore Throat",
+      "maxPlausibleDays": 5,
+      "typicalTreatments": ["Antibiotics", "Antipyretics", "Warm saline gargle", "Voice rest", "Analgesics"],
+      "suspiciousLeaveThresholdDays": 10
+    },
+    {
+      "icdCode": "J06.9",
+      "condition": "Upper Respiratory Infection / Common Cold",
+      "maxPlausibleDays": 7,
+      "typicalTreatments": ["Antihistamines", "Rest", "Hydration", "Paracetamol", "Steam inhalation"],
+      "suspiciousLeaveThresholdDays": 14
+    },
+    {
+      "icdCode": "M54.5",
+      "condition": "Acute Lumbar Strain / Low Back Pain",
+      "maxPlausibleDays": 14,
+      "typicalTreatments": ["Physiotherapy", "NSAIDs", "Muscle relaxants", "Lumbar support belt", "Bed rest"],
+      "suspiciousLeaveThresholdDays": 30
+    },
+    {
+      "icdCode": "A09",
+      "condition": "Acute Gastroenteritis / Food Poisoning",
+      "maxPlausibleDays": 4,
+      "typicalTreatments": ["Oral rehydration salts", "Probiotics", "Electrolyte fluids", "Antibiotics", "Light diet"],
+      "suspiciousLeaveThresholdDays": 8
+    },
+    {
+      "icdCode": "S83.5",
+      "condition": "Ligament Sprain / Meniscus Tear",
+      "maxPlausibleDays": 28,
+      "typicalTreatments": ["Immobilization brace", "Orthopedic consult", "Ice therapy", "Rest", "Surgical evaluation"],
+      "suspiciousLeaveThresholdDays": 60
+    },
+    {
+      "icdCode": "B34.9",
+      "condition": "Viral Fever / General Pyrexia",
+      "maxPlausibleDays": 6,
+      "typicalTreatments": ["Paracetamol", "Bed rest", "Hydration", "CBC monitoring"],
+      "suspiciousLeaveThresholdDays": 12
+    }
+  ],
+  "knownForgerySignatures": [
+    {
+      "signatureId": "ATTACK-SIG-01",
+      "attackType": "DATE_ALTERATION_ELA_SPIKE",
+      "detectionVector": "Error Level Analysis & DCT Matrix Mismatch",
+      "description": "Leave dates overwritten or modified in image editor causing localized compression error spike.",
+      "anomalyRegion": { "x": 48.0, "y": 52.0, "width": 38.0, "height": 9.0, "label": "Medical Leave Dates" },
+      "elaDivergenceScore": 0.74,
+      "riskScore": 88,
+      "severity": "CRITICAL"
+    },
+    {
+      "signatureId": "ATTACK-SIG-02",
+      "attackType": "DOCTOR_SEAL_CLONING",
+      "detectionVector": "Alpha Channel Clipping & Gradient Edge Discontinuity",
+      "description": "Institutional seal extracted from legitimate certificate and pasted over forged template.",
+      "anomalyRegion": { "x": 65.0, "y": 78.0, "width": 26.0, "height": 16.0, "label": "Physician Signature & Seal" },
+      "elaDivergenceScore": 0.82,
+      "riskScore": 91,
+      "severity": "CRITICAL"
+    },
+    {
+      "signatureId": "ATTACK-SIG-03",
+      "attackType": "FONT_ANTI_ALIASING_INCONSISTENCY",
+      "detectionVector": "Sub-pixel Typography Kerning & Resolution Variance",
+      "description": "Patient name or registration details inserted with digital font differing from native scan.",
+      "anomalyRegion": { "x": 28.0, "y": 38.0, "width": 42.0, "height": 7.0, "label": "Patient Legal Name" },
+      "elaDivergenceScore": 0.65,
+      "riskScore": 84,
+      "severity": "MEDIUM"
+    },
+    {
+      "signatureId": "ATTACK-SIG-04",
+      "attackType": "EXIF_SOFTWARE_TRACE_DETECTED",
+      "detectionVector": "Metadata Header & Editing Tool Stamp",
+      "description": "Software signature metadata found indicating raster manipulation (Photoshop/Canva/GIMP).",
+      "anomalyRegion": { "x": 10.0, "y": 90.0, "width": 80.0, "height": 8.0, "label": "Document Binary Metadata" },
+      "elaDivergenceScore": 0.58,
+      "riskScore": 79,
+      "severity": "MEDIUM"
+    }
+  ],
+  "benchmarkTestCases": [
+    {
+      "id": "CASE-GENUINE-001",
+      "name": "NABH Authentic Benchmark Certificate",
+      "groundTruth": "GENUINE",
+      "matchedTemplate": "BASE-NABH-001",
+      "condition": "Acute Pharyngitis / Viral Sore Throat",
+      "leaveDays": 4,
+      "noiseVariance": 0.021,
+      "fontUniformity": 98,
+      "layoutConformity": 97,
+      "metadataIntegrity": 96,
+      "clinicalPlausibility": 99,
+      "riskScore": 5,
+      "anomalies": []
+    },
+    {
+      "id": "CASE-FORGERY-002",
+      "name": "DocTamper Benchmark #104 - 14-Day Date Tampering",
+      "groundTruth": "FORGERY",
+      "matchedSignature": "ATTACK-SIG-01",
+      "condition": "Viral Fever / General Pyrexia",
+      "leaveDays": 21,
+      "noiseVariance": 0.089,
+      "fontUniformity": 44,
+      "layoutConformity": 58,
+      "metadataIntegrity": 28,
+      "clinicalPlausibility": 45,
+      "riskScore": 88,
+      "softwareTrace": "Adobe Photoshop 2024 (Windows)",
+      "anomalies": ["ATTACK-SIG-01", "ATTACK-SIG-03"]
+    },
+    {
+      "id": "CASE-FORGERY-003",
+      "name": "CASIA 2.0 Benchmark #389 - Spliced Seal & Stamp",
+      "groundTruth": "FORGERY",
+      "matchedSignature": "ATTACK-SIG-02",
+      "condition": "Ligament Sprain",
+      "leaveDays": 12,
+      "noiseVariance": 0.114,
+      "fontUniformity": 52,
+      "layoutConformity": 62,
+      "metadataIntegrity": 35,
+      "clinicalPlausibility": 85,
+      "riskScore": 92,
+      "softwareTrace": "Canva Web Editor Export",
+      "anomalies": ["ATTACK-SIG-02", "ATTACK-SIG-04"]
+    }
+  ]
+}

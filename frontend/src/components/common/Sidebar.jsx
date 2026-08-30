@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Shield, LayoutDashboard, FileText, Stethoscope, FilePlus2, ScanLine, Link2, HeartPulse, Sparkles, Building2, Activity, ShieldCheck } from 'lucide-react';
+import { Shield, LayoutDashboard, FileText, Stethoscope, FilePlus2, ScanLine, Link2, HeartPulse, Sparkles, Building2, Activity, ShieldCheck, BrainCircuit } from 'lucide-react';
 import { ROLES } from '../../utils/constants';
 
 const Sidebar = ({ role }) => {
@@ -20,6 +20,7 @@ const Sidebar = ({ role }) => {
   const institutionLinks = [
     { to: '/institution/dashboard', icon: <LayoutDashboard size={19} />, label: 'Dashboard' },
     { to: '/institution/verify', icon: <ScanLine size={19} />, label: 'Verify Certificate' },
+    { to: '/institution/ai-detector', icon: <BrainCircuit size={19} />, label: 'AI Forgery Detector' },
     { to: '/institution/history', icon: <Activity size={19} />, label: 'Verification Logs' },
   ];
 

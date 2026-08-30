@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatsCard from '../../components/dashboard/StatsCard';
 import Badge from '../../components/common/Badge';
-import { ShieldCheck, ScanLine, Activity, AlertTriangle, XCircle, Search, FileText, Sparkles, Building2 } from 'lucide-react';
+import { ShieldCheck, ScanLine, Activity, AlertTriangle, XCircle, Search, FileText, Sparkles, Building2, BrainCircuit } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const InstitutionDashboard = () => {
@@ -21,11 +21,14 @@ const InstitutionDashboard = () => {
             Institutional Verification Center
           </h1>
           <p className="text-slate-500 text-sm font-medium max-w-xl">
-            Welcome, <span className="text-teal-700 font-extrabold">{user?.username}</span> — verify medical certificates and manage verification logs.
+            Welcome, <span className="text-teal-700 font-extrabold">{user?.username}</span> — verify medical certificates, detect visual forgeries with AI, and view verification logs.
           </p>
           <div className="pt-2 flex flex-wrap justify-center md:justify-start gap-3">
             <button onClick={() => navigate('/institution/verify')} className="btn btn-mint shadow-[0_6px_20px_rgba(13,148,136,0.35)]">
               <ScanLine size={18} /> Launch Scanner
+            </button>
+            <button onClick={() => navigate('/institution/ai-detector')} className="btn btn-primary shadow-[0_6px_20px_rgba(13,148,136,0.25)]">
+              <BrainCircuit size={18} /> AI Forgery Detector
             </button>
             <button onClick={() => navigate('/institution/history')} className="btn btn-secondary">
               <Activity size={18} /> Verification Logs
@@ -44,50 +47,76 @@ const InstitutionDashboard = () => {
       </div>
 
       {/* Main Action Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Verify Certificate Card */}
         <div 
           onClick={() => navigate('/institution/verify')}
-          className="glass-card border-teal-100 p-8 cursor-pointer group hover:border-teal-300 transition-all"
+          className="glass-card border-teal-100 p-6 cursor-pointer group hover:border-teal-300 transition-all flex flex-col justify-between"
         >
-          <div className="flex items-start gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs shrink-0">
-              <ScanLine size={30} />
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs shrink-0">
+              <ScanLine size={24} />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-extrabold text-slate-800 mb-2 group-hover:text-teal-700 transition-colors">Verify a Medical Certificate</h2>
-              <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                Scan a QR code or enter a certificate UUID to check authenticity.
+              <h2 className="text-base font-extrabold text-slate-800 mb-1.5 group-hover:text-teal-700 transition-colors">Verify Certificate</h2>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                Scan QR code or enter UUID to verify cryptographic authenticity.
               </p>
-              <div className="mt-5">
-                <span className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-xs font-bold rounded-xl shadow-[0_4px_16px_rgba(13,148,136,0.3)]">
-                  <ScanLine size={15} /> Start Verification →
-                </span>
-              </div>
             </div>
+          </div>
+          <div className="mt-5 pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 group-hover:translate-x-1 transition-transform">
+              Launch Scanner →
+            </span>
+          </div>
+        </div>
+
+        {/* AI Forgery Detector Card */}
+        <div 
+          onClick={() => navigate('/institution/ai-detector')}
+          className="glass-card border-purple-100 bg-gradient-to-b from-white to-purple-50/20 p-6 cursor-pointer group hover:border-purple-300 transition-all flex flex-col justify-between relative overflow-hidden"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs shrink-0">
+              <BrainCircuit size={24} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-base font-extrabold text-slate-800 group-hover:text-purple-700 transition-colors">AI Forgery Detector</h2>
+                <Badge variant="primary">New</Badge>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                Detect spliced dates, forged seals, and compression noise anomalies (ELA).
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 pt-3 border-t border-purple-100">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-purple-700 group-hover:translate-x-1 transition-transform">
+              Run Forensic Scan →
+            </span>
           </div>
         </div>
 
         {/* Verification History Card */}
         <div 
           onClick={() => navigate('/institution/history')}
-          className="glass-card border-slate-200 p-8 cursor-pointer group hover:border-slate-300 transition-all"
+          className="glass-card border-slate-200 p-6 cursor-pointer group hover:border-slate-300 transition-all flex flex-col justify-between"
         >
-          <div className="flex items-start gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs shrink-0">
-              <Activity size={30} />
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs shrink-0">
+              <Activity size={24} />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-extrabold text-slate-800 mb-2 group-hover:text-teal-700 transition-colors">Verification Logs & History</h2>
-              <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                View the complete audit log of all certificates checked by your organization.
+              <h2 className="text-base font-extrabold text-slate-800 mb-1.5 group-hover:text-teal-700 transition-colors">Audit History Logs</h2>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                View complete audit trail of verified certificates and IP telemetry.
               </p>
-              <div className="mt-5">
-                <span className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-2xs">
-                  <Activity size={15} /> View History Log →
-                </span>
-              </div>
             </div>
+          </div>
+          <div className="mt-5 pt-3 border-t border-slate-100">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 group-hover:translate-x-1 transition-transform">
+              View History Log →
+            </span>
           </div>
         </div>
       </div>

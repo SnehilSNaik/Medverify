@@ -32,6 +32,7 @@ import LinkCertificate from './pages/student/LinkCertificate';
 import InstitutionDashboard from './pages/institution/InstitutionDashboard';
 import VerifyPortal from './pages/institution/VerifyPortal';
 import VerificationHistory from './pages/institution/VerificationHistory';
+import AIForgeryDetector from './pages/institution/AIForgeryDetector';
 
 import { ROLES } from './utils/constants';
 
@@ -84,11 +85,12 @@ function App() {
         <Route path="link" element={<AppLayout role={ROLES.STUDENT}><LinkCertificate /></AppLayout>} />
       </Route>
 
-      {/* Institution / Company Routes */}
+      {/* Institution / Company Routes (Exclusive to Verifier role) */}
       <Route path="/institution" element={<ProtectedRoute allowedRoles={[ROLES.VERIFIER]} />}>
         <Route path="" element={<Navigate to="/institution/dashboard" replace />} />
         <Route path="dashboard" element={<AppLayout role={ROLES.VERIFIER}><InstitutionDashboard /></AppLayout>} />
         <Route path="verify" element={<AppLayout role={ROLES.VERIFIER}><VerifyPortal /></AppLayout>} />
+        <Route path="ai-detector" element={<AppLayout role={ROLES.VERIFIER}><AIForgeryDetector /></AppLayout>} />
         <Route path="history" element={<AppLayout role={ROLES.VERIFIER}><VerificationHistory /></AppLayout>} />
       </Route>
 

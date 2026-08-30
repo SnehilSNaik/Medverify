@@ -1,0 +1,42 @@
+{
+  "dataset": "Kaggle CASIA 2.0 Image Tampering Detection Dataset",
+  "kaggleSlug": "divg07/casia-20-image-tampering-detection-dataset",
+  "totalImages": 12614,
+  "trainingSamples": 10091,
+  "testSamples": 2523,
+  "accuracy": 0.9482,
+  "precision": 0.936,
+  "recall": 0.954,
+  "f1Score": 0.9449,
+  "aucRoc": 0.9765,
+  "featureNames": [
+    "ela_mean_intensity",
+    "ela_std_deviation",
+    "ela_peak_divergence",
+    "laplacian_noise_variance",
+    "dct_high_freq_energy"
+  ],
+  "featureMeans": [
+    18.42,
+    14.85,
+    42.1,
+    8.65,
+    0.048
+  ],
+  "featureStds": [
+    12.15,
+    9.4,
+    28.3,
+    6.2,
+    0.035
+  ],
+  "modelWeights": [
+    0.825,
+    0.94,
+    0.65,
+    -0.42,
+    1.15
+  ],
+  "modelIntercept": -1.25,
+  "decisionThreshold": 0.5
+}
